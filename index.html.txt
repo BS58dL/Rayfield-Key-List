@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BS卡密生成</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            min-height: 100vh;
+            padding: 15px;
+            line-height: 1.5;
+        }
+        
+        .container {
+            max-width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px;
+            margin: 0 auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .header h1 {
+            font-size: 1.8em;
+            margin-bottom: 8px;
+            background: linear-gradient(45deg, #ffd89b, #19547b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .control-panel {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+        
+        select, input, button {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.9);
+            transition: all 0.3s ease;
+        }
+        
+        select:focus, input:focus {
+            transform: scale(1.02);
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+        }
+        
+        button {
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            color: white;
+            font-weight: bold;
+            font-size: 1.1em;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        button:active {
+            transform: scale(0.95);
+        }
+        
+        .key-display {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+            text-align: center;
+            display: none;
+        }
+        
+        .generated-key {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #feca57;
+            margin: 15px 0;
+            word-break: break-all;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px dashed #feca57;
+        }
+        
+        .copy-btn {
+            background: #27ae60 !important;
+            margin-top: 15px;
+        }
+        
+        .keys-list {
+            margin-top: 25px;
+        }
+        
+        .key-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .key-info {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .key-actions {
+            margin-top: 10px;
+        }
+        
+        .small-btn {
+            width: auto;
+            padding: 8px 15px;
+            font-size: 0.9em;
+            margin: 5px;
+        }
+        
+        /* 手机横屏优化 */
+        @media (min-width: 768px) {
+            .container {
+                max-width: 600px;
+            }
+            
+            .key-item {
+                flex-wrap: nowrap;
+            }
+            
+            .key-actions {
+                margin-top: 0;
+                margin-left: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 BS卡密生成</h1>
+            <p>手机端专用 - 安全便捷</p>
+        </div>
+        
+        <div class="control-panel">
+            <div class="form-group">
+                <label for="keyType">卡密类型：</label>
+                <select id="keyType">
+                    <option value="daily">今日卡密</option>
+                    <option value="normal">普通卡密</option>
+                </select>
+            </div>
+            
+            <div class="form-group" id="lengthGroup">
+                <label for="keyLength">卡密长度：</label>
+                <select id="keyLength">
+                    <option value="12">12位</option>
+                    <option value="16" selected>16位</option>
+                    <option value="20">20位</option>
+                </select>
+            </div>
+            
+            <button onclick="generateKey()">🎲 生成卡密</button>
+            <button onclick="clearHistory()" style="background:linear-gradient(45deg, #e74c3c, #c0392b); margin-top:10px;">
+                🗑️ 清空记录
+            </button>
+        </div>
+        
+        <div class="key-display" id="keyDisplay">
+            <h3>生成的卡密：</h3>
+            <div class="generated-key" id="generatedKey"></div>
+            <button class="copy-btn" onclick="copyToClipboard()">📋 复制卡密</button>
+        </div>
+        
+        <div class="keys-list">
+            <h3>历史记录：</h3>
+            <div id="keysContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        // 生成卡密函数
+        function generateKey() {
+            const type = document.getElementById('keyType').value;
+            const length = parseInt(document.getElementById('keyLength').value);
+            
+            let key;
+            if (type === 'daily') {
+                key = generateDailyKey();
+            } else {
+                key = generateNormalKey(length);
+            }
+            
+            displayKey(key);
+            saveKey(key, type === 'daily' ? '今日卡密' : '普通卡密');
+            
+            // 震动反馈（如果支持）
+            if (navigator.vibrate) {
+                navigator.vibrate(50);
+            }
+        }
+        
+        function generateDailyKey() {
+            const today = new Date();
+            const dateStr = today.getFullYear() + 
+                           String(today.getMonth() + 1).padStart(2, '0') + 
+                           String(today.getDate()).padStart(2, '0');
+            const random = Math.random().toString(36).substring(2, 10).toUpperCase();
+            return 'BS' + dateStr + random;
+        }
+        
+        function generateNormalKey(length) {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let key = '';
+            for (let i = 0; i < length; i++) {
+                key += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return key;
+        }
+        
+        function displayKey(key) {
+            document.getElementById('generatedKey').textContent = key;
+            document.getElementById('keyDisplay').style.display = 'block';
+            
+            // 滚动到显示区域
+            document.getElementById('keyDisplay').scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'center' 
+            });
+        }
+        
+        async function copyToClipboard() {
+            const key = document.getElementById('generatedKey').textContent;
+            try {
+                await navigator.clipboard.writeText(key);
+                showToast('卡密已复制到剪贴板！');
+            } catch (err) {
+                // 备用方案
+                const textArea = document.createElement('textarea');
+                textArea.value = key;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showToast('卡密已复制！');
+            }
+        }
+        
+        function showToast(message) {
+            // 简单的提示实现
+            alert(message);
+        }
+        
+        function saveKey(key, type) {
+            let keys = JSON.parse(localStorage.getItem('bs_mobile_keys') || '[]');
+            keys.unshift({
+                key: key,
+                type: type,
+                date: new Date().toLocaleString('zh-CN'),
+                timestamp: Date.now()
+            });
+            
+            // 只保留最近20个
+            if (keys.length > 20) {
+                keys = keys.slice(0, 20);
+            }
+            
+            localStorage.setItem('bs_mobile_keys', JSON.stringify(keys));
+            updateKeysList();
+        }
+        
+        function updateKeysList() {
+            const keys = JSON.parse(localStorage.getItem('bs_mobile_keys') || '[]');
+            const container = document.getElementById('keysContainer');
+            
+            container.innerHTML = keys.map(item => `
+                <div class="key-item">
+                    <div class="key-info">
+                        <strong>${item.key}</strong>
+                        <div style="font-size:0.9em;color:#ccc;margin-top:5px;">
+                            ${item.date} - ${item.type}
+                        </div>
+                    </div>
+                    <div class="key-actions">
+                        <button class="small-btn" onclick="copyKey('${item.key}')">复制</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function copyKey(key) {
+            navigator.clipboard.writeText(key).then(() => {
+                showToast('卡密已复制！');
+            });
+        }
+        
+        function clearHistory() {
+            if (confirm('确定要清空所有历史记录吗？')) {
+                localStorage.removeItem('bs_mobile_keys');
+                updateKeysList();
+                showToast('历史记录已清空');
+            }
+        }
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            updateKeysList();
+            
+            // 根据类型显示/隐藏长度选择
+            document.getElementById('keyType').addEventListener('change', function() {
+                const isDaily = this.value === 'daily';
+                document.getElementById('lengthGroup').style.display = isDaily ? 'none' : 'block';
+            });
+            
+            // 触发一次以设置初始状态
+            document.getElementById('keyType').dispatchEvent(new Event('change'));
+        });
+    </script>
+</body>
+</html>
